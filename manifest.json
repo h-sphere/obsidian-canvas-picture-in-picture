@@ -1,0 +1,11 @@
+{
+	"id": "canvas-picture-in-picture",
+	"name": "Canvas Picture in Picture",
+	"version": "0.1.0",
+	"minAppVersion": "0.15.0",
+	"description": "A plugin to allow putting Canvas nodes in picture-in-picture mode",
+	"author": "hypersphere",
+	"authorUrl": "https://hypersphere.blog/",
+	"fundingUrl": "ko-fi.com/hypersphere",
+	"isDesktopOnly": false
+}
