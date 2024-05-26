@@ -1,8 +1,12 @@
 import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
 
 export default class CanvasFloatPlugin extends Plugin {
-	private floatingElement: HTMLElement | null = null;
+  private floatingElement: HTMLElement | null = null;
   private originalElement: HTMLElement | null = null;
+  private isResizing: boolean = false;
+  private resizeDirection: string | null = null;
+  private aspectRatio: number = 9.0 / 16.0; // Default aspect ratio
+
   async onload() {
     console.log('Loading Canvas Float Plugin');
 
@@ -20,13 +24,10 @@ export default class CanvasFloatPlugin extends Plugin {
         return false;
       }
     });
-	this.app.workspace.on('layout-change', () => this.handleLayoutChange());
+    this.app.workspace.on('layout-change', () => this.handleLayoutChange());
   }
 
   getActiveCanvas(): HTMLElement | null {
-    // Logic to get the currently active canvas element
-    // This might vary depending on how Obsidian handles canvas internally
-    // Placeholder logic:
     const activeLeaf = this.app.workspace.activeLeaf;
     if (activeLeaf && activeLeaf.view.containerEl) {
       return activeLeaf.view.containerEl.querySelector('.canvas');
@@ -36,24 +37,23 @@ export default class CanvasFloatPlugin extends Plugin {
 
   floatSelectedElement(canvas: HTMLElement) {
     const selectedElement = this.getSelectedElement(canvas)?.parentElement;
+    
     if (selectedElement) {
+      const originalRect = selectedElement.getBoundingClientRect();
+      this.aspectRatio = originalRect.width / originalRect.height;
       this.createFloatingElement(selectedElement);
       this.replaceOriginalElement(selectedElement);
     }
   }
 
   getSelectedElement(canvas: HTMLElement): HTMLElement | null {
-    // Logic to get the currently selected element on the canvas
-    // Placeholder logic:
     return canvas.querySelector('.canvas-node.is-focused .canvas-node-content');
   }
-
 
   replaceOriginalElement(element: HTMLElement) {
     element.dataset.originalContent = element.innerHTML;
     element.innerHTML = '<div class="canvas-pip-restore-message"><p>Element is in Picture-in-Picture mode.</p><button class="restore-btn">Restore</button></div>';
 
-    // Add event listener to the restore button in the original element
     const restoreBtn = element.querySelector('.restore-btn') as HTMLButtonElement;
     restoreBtn.onclick = () => {
       this.restoreElementBack(element);
@@ -66,7 +66,7 @@ export default class CanvasFloatPlugin extends Plugin {
       originalElement.innerHTML = originalContent;
     }
     document.body.removeChild(floatingContainer);
-	this.floatingElement = null;
+    this.floatingElement = null;
     this.originalElement = null;
   }
 
@@ -78,44 +78,110 @@ export default class CanvasFloatPlugin extends Plugin {
   }
 
   createFloatingElement(element: HTMLElement) {
-	if (this.floatingElement) {
-		// Restore previous floating element if any
-		this.restoreElement(this.floatingElement, this.originalElement!);
-	}
+    if (this.floatingElement) {
+      this.restoreElement(this.floatingElement, this.originalElement!);
+    }
+
     const floatingContainer = document.createElement('div');
     floatingContainer.classList.add('floating-container');
     floatingContainer.appendChild(element.cloneNode(true));
-    
+
     document.body.appendChild(floatingContainer);
-    
+
     this.applyFloatingStyles(floatingContainer);
 
-	// Add restore button
     const restoreButton = document.createElement('button');
     restoreButton.innerText = 'Restore';
     restoreButton.onclick = () => {
       this.restoreElement(floatingContainer, element);
     };
     floatingContainer.appendChild(restoreButton);
-	this.floatingElement = floatingContainer;
+
+    this.floatingElement = floatingContainer;
     this.originalElement = element;
+
+    this.addResizeHandlers(floatingContainer);
   }
 
   applyFloatingStyles(container: HTMLElement) {
-    container.style.position = 'fixed';
-    container.style.left = '10px';
-    container.style.bottom = '10px';
-    container.style.width = '640px';
-    container.style.height = '380px';
-    container.style.backgroundColor = 'white';
-    container.style.border = '1px solid black';
-    container.style.zIndex = '1000';
-    container.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-    container.style.overflow = 'auto';
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+
+    let width = windowWidth * 0.4; // Set width to 40% of window width
+    let height = width / this.aspectRatio;
+    if (height > windowHeight * 0.5) {
+      // If height is greater than 80% of window height, set height to 80% of window height
+      height = windowHeight * 0.5;
+      width = height * this.aspectRatio;
+    }
+    container.style.width = `${width}px`;
+    container.style.height = `${height}px`;
   }
 
-  onunload() {
-    console.log('Unloading Canvas Float Plugin');
+  addResizeHandlers(container: HTMLElement) {
+    container.addEventListener('mousemove', (e) => {
+      const rect = container.getBoundingClientRect();
+      const isResizingRight = e.clientX > rect.right - 10 && e.clientX < rect.right;
+      const isResizingTop = e.clientY < rect.top + 10 && e.clientY > rect.top;
+      const isResizingCorner = e.clientX > rect.right - 10 && e.clientY < rect.top + 10;
+
+      if (isResizingCorner) {
+        container.dataset.resizeDirection = 'corner';
+      } else if (isResizingRight) {
+        container.dataset.resizeDirection = 'right';
+      } else if (isResizingTop) {
+        container.dataset.resizeDirection = 'top';
+      } else {
+        container.dataset.resizeDirection = '';
+      }
+    });
+
+    container.addEventListener('mouseleave', () => { container.dataset.resizeDirection = '' });
+
+    container.addEventListener('mousedown', (e) => {
+      const rect = container.getBoundingClientRect();
+      if (e.clientX > rect.right - 10 && e.clientX < rect.right && e.clientY < rect.top + 10 && e.clientY > rect.top) {
+        this.isResizing = true;
+        this.resizeDirection = 'corner';
+        this.floatingElement?.classList.add('resizing')
+        e.preventDefault()
+      } else if (e.clientX > rect.right - 10 && e.clientX < rect.right) {
+        this.isResizing = true;
+        this.resizeDirection = 'right';
+        this.floatingElement?.classList.add('resizing')
+        e.preventDefault()
+      } else if (e.clientY < rect.top + 10 && e.clientY > rect.top) {
+        this.isResizing = true;
+        this.resizeDirection = 'top';
+        this.floatingElement?.classList.add('resizing')
+        e.preventDefault()
+      }
+    });
+
+    document.addEventListener('mousemove', this.resizeElement.bind(this));
+    document.addEventListener('mouseup', this.stopResizing.bind(this));
+  }
+
+  resizeElement(e: MouseEvent) {
+    if (!this.isResizing || !this.floatingElement) return;
+    e.preventDefault();
+
+    const rect = this.floatingElement.getBoundingClientRect();
+    if (this.resizeDirection === 'corner') {
+      this.floatingElement.style.width = `${e.clientX - rect.left}px`;
+      this.floatingElement.style.height = `${rect.bottom - e.clientY}px`;
+    } else if (this.resizeDirection === 'right') {
+      this.floatingElement.style.width = `${e.clientX - rect.left}px`;
+    } else if (this.resizeDirection === 'top') {
+      this.floatingElement.style.height = `${rect.bottom - e.clientY}px`;
+    }
+  }
+
+  stopResizing(e: MouseEvent) {
+    this.isResizing = false;
+    this.resizeDirection = null;
+    this.floatingElement?.classList.remove('resizing')
+    e.preventDefault()
   }
 
   handleLayoutChange() {
@@ -125,5 +191,9 @@ export default class CanvasFloatPlugin extends Plugin {
         this.restoreElement(this.floatingElement, this.originalElement);
       }
     }
+  }
+
+  onunload() {
+    console.log('Unloading Canvas Float Plugin');
   }
 }
