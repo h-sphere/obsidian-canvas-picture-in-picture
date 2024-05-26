@@ -1,11 +1,11 @@
-# Obsidian Inbox 
+# Obsidian Canvas Picture-in-Picture 
  Plugin
 
-Obsidian Community Plugin to help you organise your inbox folder.
+Obsidian Community Plugin to elevate Canvas Node above the rest of the content and float while editing it, also known as **picture-in-picture**.
 
 # Get Started
 To get started simply:
 1. Install the plugin
-2. setup inbox folder in settings (by default it's set to `Inbox`)
-3. Run command: `Inbox Organiser: Organise Inbox Files` using your command palette `cmd-P`
-4. You will get prompted with each of the files where to put it. If you want to cancel the process, simply click the cross icon on your modal.
+2. Open Canvas and select an element you intend to float
+3. Run command: `Canvas Picture in Picture: Float Selected Element` using your command palette `cmd-P`
+4. The element should start floating in your bottom left corner. You can resize it by hovering on the top or right corner.
