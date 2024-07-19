@@ -53,6 +53,8 @@
     box-shadow: rgba(0, 0, 0, 0.2) 0px 4px 8px;
     overflow: auto;
     resize: none;
+    width: var(--width);
+    height: var(--height);
   }
 
   .floating-container[data-resize-direction='corner'] {

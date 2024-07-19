@@ -74,7 +74,7 @@ export default class CanvasFloatPlugin extends Plugin {
 
   restoreElement(floatingContainer: HTMLElement, originalElement: HTMLElement) {
     originalElement.empty();
-    originalElement.appendChild(floatingContainer.children[0].cloneNode(true));
+    originalElement.appendChild(floatingContainer.children[0].children[0].cloneNode(true));
     document.body.removeChild(floatingContainer);
     this.floatingElement = null;
     this.originalElement = null;
@@ -125,8 +125,8 @@ export default class CanvasFloatPlugin extends Plugin {
       height = windowHeight * 0.5;
       width = height * this.aspectRatio;
     }
-    container.style.width = `${width}px`;
-    container.style.height = `${height}px`;
+    container.style.setProperty('--width', `${width}px`)
+    container.style.setProperty('--height', `${height}px`)
   }
 
   addResizeHandlers(container: HTMLElement) {
@@ -179,12 +179,12 @@ export default class CanvasFloatPlugin extends Plugin {
 
     const rect = this.floatingElement.getBoundingClientRect();
     if (this.resizeDirection === 'corner') {
-      this.floatingElement.style.width = `${e.clientX - rect.left}px`;
-      this.floatingElement.style.height = `${rect.bottom - e.clientY}px`;
+      this.floatingElement.style.setProperty('--width', `${e.clientX - rect.left}px`);
+      this.floatingElement.style.setProperty('--height', `${rect.bottom - e.clientY}px`);
     } else if (this.resizeDirection === 'right') {
-      this.floatingElement.style.width = `${e.clientX - rect.left}px`;
+      this.floatingElement.style.setProperty('--width', `${e.clientX - rect.left}px`);
     } else if (this.resizeDirection === 'top') {
-      this.floatingElement.style.height = `${rect.bottom - e.clientY}px`;
+      this.floatingElement.style.setProperty('--height', `${rect.bottom - e.clientY}px`);
     }
   }
 
