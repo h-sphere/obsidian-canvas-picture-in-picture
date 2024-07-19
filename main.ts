@@ -1,9 +1,9 @@
-import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { Plugin } from 'obsidian';
 
 export default class CanvasFloatPlugin extends Plugin {
   private floatingElement: HTMLElement | null = null;
   private originalElement: HTMLElement | null = null;
-  private isResizing: boolean = false;
+  private isResizing = false;
   private resizeDirection: string | null = null;
   private aspectRatio: number = 9.0 / 16.0; // Default aspect ratio
 
@@ -51,8 +51,20 @@ export default class CanvasFloatPlugin extends Plugin {
   }
 
   replaceOriginalElement(element: HTMLElement) {
-    element.dataset.originalContent = element.innerHTML;
-    element.innerHTML = '<div class="canvas-pip-restore-message"><p>Element is in Picture-in-Picture mode.</p><button class="restore-btn">Restore</button></div>';
+    element.dataset.originalContent = element.children.toString();
+
+    const newElement = document.createElement('div');
+    newElement.classList.add('canvas-pip-restore-message');
+    const message = document.createElement('p');
+    message.textContent = 'Element is in Picture-in-Picture mode.';
+    const button = document.createElement('button');
+    button.classList.add('restore-btn');
+    button.textContent = 'Restore';
+    newElement.appendChild(message);
+    newElement.appendChild(button);
+
+    element.empty();
+    element.appendChild(newElement);
 
     const restoreBtn = element.querySelector('.restore-btn') as HTMLButtonElement;
     restoreBtn.onclick = () => {
@@ -61,10 +73,8 @@ export default class CanvasFloatPlugin extends Plugin {
   }
 
   restoreElement(floatingContainer: HTMLElement, originalElement: HTMLElement) {
-    const originalContent = originalElement.dataset.originalContent;
-    if (originalContent) {
-      originalElement.innerHTML = originalContent;
-    }
+    originalElement.empty();
+    originalElement.appendChild(floatingContainer.children[0].cloneNode(true));
     document.body.removeChild(floatingContainer);
     this.floatingElement = null;
     this.originalElement = null;
@@ -78,12 +88,13 @@ export default class CanvasFloatPlugin extends Plugin {
   }
 
   createFloatingElement(element: HTMLElement) {
-    if (this.floatingElement) {
-      this.restoreElement(this.floatingElement, this.originalElement!);
+    if (this.floatingElement && this.originalElement) {
+      this.restoreElement(this.floatingElement, this.originalElement);
     }
 
     const floatingContainer = document.createElement('div');
     floatingContainer.classList.add('floating-container');
+    
     floatingContainer.appendChild(element.cloneNode(true));
 
     document.body.appendChild(floatingContainer);
