@@ -12,7 +12,7 @@ export default class CanvasFloatPlugin extends Plugin {
 
     this.addCommand({
       id: 'float-selected-element',
-      name: 'Float Selected Element',
+      name: 'Float selected element',
       checkCallback: (checking: boolean) => {
         const canvas = this.getActiveCanvas();
         if (canvas) {
@@ -56,7 +56,7 @@ export default class CanvasFloatPlugin extends Plugin {
     const newElement = document.createElement('div');
     newElement.classList.add('canvas-pip-restore-message');
     const message = document.createElement('p');
-    message.textContent = 'Element is in Picture-in-Picture mode.';
+    message.textContent = 'Element is in picture-in-picture mode.';
     const button = document.createElement('button');
     button.classList.add('restore-btn');
     button.textContent = 'Restore';
